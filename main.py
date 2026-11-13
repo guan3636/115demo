@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
@@ -397,7 +396,7 @@ def editor_list(request: Request):
             <td>{submission_id}</td>
             <td>{escape(author)}</td>
             <td>{escape(category)}</td>
-            <td>{escape(title)}</td>
+            <td><a href="/editor/submission/{submission_id}">{escape(title)}</a></td>
             <td>{escape(status)}</td>
             <td>{review_buttons}</td>
         </tr>
@@ -431,6 +430,53 @@ def editor_list(request: Request):
     </html>
     """
 
+
+
+@app.get("/editor/submission/{submission_id}", response_class=HTMLResponse)
+def editor_submission_detail(request: Request, submission_id: int):
+    require_role(request, "editor")
+
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT author, category, title, content, status
+                FROM submissions
+                WHERE id = %s AND status = %s
+            """, (submission_id, "審查中"))
+            submission = cur.fetchone()
+
+    if submission is None:
+        raise HTTPException(status_code=404, detail="找不到待審查稿件")
+
+    author, category, title, content, status = submission
+    return f"""
+    <!DOCTYPE html>
+    <html lang="zh-Hant">
+    <head>
+        <meta charset="UTF-8">
+        <title>查看稿件內容</title>
+    </head>
+    <body>
+        <h1>稿件內容</h1>
+        <p><strong>編號：</strong>{submission_id}</p>
+        <p><strong>作者：</strong>{escape(author)}</p>
+        <p><strong>類別：</strong>{escape(category)}</p>
+        <p><strong>標題：</strong>{escape(title)}</p>
+        <p><strong>審查狀態：</strong>{escape(status)}</p>
+        <h2>文章內容</h2>
+        <div style="white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid #ccc; padding: 16px;">{escape(content)}</div>
+        <p>
+            <form action="/review/{submission_id}/approve" method="post" style="display:inline;">
+                <button type="submit">通過</button>
+            </form>
+            <form action="/review/{submission_id}/return" method="post" style="display:inline;">
+                <button type="submit">退回</button>
+            </form>
+        </p>
+        <p><a href="/dashboard">返回審查清單</a></p>
+    </body>
+    </html>
+    """
 
 
 @app.post("/review/{submission_id}/{action}")
