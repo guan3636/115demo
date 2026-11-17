@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}註冊帳號 · 布丁投稿室{% endblock %}
+{% block auth_content %}
+<div class="login-layout">
+  <div class="login-hero">
+    <div class="sparkle">JOIN OUR STUDIO ♡</div>
+    <div class="pudding-art"><div class="caramel"></div><div class="pudding-face"><i></i><i></i><b>ᴗ</b></div></div>
+    <h1>加入布丁投稿室</h1>
+    <p>把你的好點子，寫成一篇好文章。</p>
+  </div>
+  <div class="login-panel">
+    <div class="login-card">
+      <div class="eyebrow">NEW ACCOUNT ✦</div>
+      <h2>建立新帳號</h2>
+      <p class="muted">選擇你的身分，開始在布丁投稿室工作。</p>
+      {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+      <form action="/register" method="post" class="stack" id="register-form">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <fieldset class="role-picker">
+          <legend>選擇註冊身分</legend>
+          <div class="role-options">
+            <label class="role-option">
+              <input type="radio" name="role" value="author" {% if selected_role|default('author') != 'editor' %}checked{% endif %} required>
+              <span class="role-card"><span class="role-emoji">✎</span><strong>作者</strong><small>撰寫、送審與管理投稿</small></span>
+            </label>
+            <label class="role-option">
+              <input type="radio" name="role" value="editor" {% if selected_role|default('author') == 'editor' %}checked{% endif %}>
+              <span class="role-card"><span class="role-emoji">☑</span><strong>編輯者</strong><small>閱讀、通過與退回稿件</small></span>
+            </label>
+          </div>
+        </fieldset>
+        <p class="role-note" id="role-note" aria-live="polite">作者與編輯者都可以直接註冊（僅供本機課堂展示）。</p>
+        <label>帳號
+          <input name="username" value="{{ username|default('') }}" autocomplete="username" minlength="3" maxlength="32" pattern="[A-Za-z0-9_]+" placeholder="3～32 字元，英文、數字、底線" required>
+        </label>
+        <label>密碼
+          <input type="password" name="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="至少 8 個字元" required>
+        </label>
+        <label>確認密碼
+          <input type="password" name="confirm_password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="再輸入一次密碼" required>
+        </label>
+        <button class="btn primary wide" type="submit">建立帳號 →</button>
+      </form>
+      <p class="login-foot">已經有帳號？ <a class="accent-link" href="/login">返回登入</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

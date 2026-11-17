@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}帳號管理 · 布丁投稿室{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">ADMIN WORKSPACE ✦</div><h1>帳號管理 🍮</h1><p class="muted">只有管理員能建立編輯者；一般訪客只能註冊作者。</p></div></div>
+<div class="panel form-panel"><div class="panel-header"><h2>＋ 新增編輯者帳號</h2></div>
+{% if request.query_params.get('created') == '1' %}<div class="notice">編輯者帳號建立成功！</div>{% endif %}
+{% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+<form class="submission-form" action="/admin/users" method="post"><input type="hidden" name="csrf" value="{{ csrf }}"><label>帳號<input name="username" value="{{ username|default('') }}" minlength="3" maxlength="32" pattern="[A-Za-z0-9_]+" autocomplete="off" required placeholder="例如 editor2"></label><div class="form-grid"><label>密碼<input name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required placeholder="至少 8 個字元"></label><label>確認密碼<input name="confirm_password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required placeholder="再次輸入密碼"></label></div><div class="form-actions"><button class="btn primary" type="submit">建立編輯者 →</button></div></form></div>
+<div class="panel admin-list"><div class="panel-header"><h2>目前帳號</h2><span class="count-chip">共 {{ users|length }} 個</span></div><div class="table-scroll"><table><thead><tr><th>編號</th><th>帳號</th><th>身分</th></tr></thead><tbody>{% for u in users %}<tr><td>#{{ u[0] }}</td><td class="title-cell">{{ u[1] }}</td><td><span class="status {{ 'approved' if u[2]=='editor' else 'draft' }}">{{ '編輯者' if u[2]=='editor' else '作者' if u[2]=='author' else u[2] }}</span></td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}
