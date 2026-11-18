@@ -6,12 +6,17 @@ from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from starlette.middleware.sessions import SessionMiddleware
+from server_sessions import DatabaseSessionMiddleware, ensure_session_table
 from werkzeug.security import check_password_hash, generate_password_hash
 from database import get_connection
 
 app = FastAPI(title="布丁投稿室")
-app.add_middleware(SessionMiddleware, secret_key=os.environ["SESSION_SECRET"], same_site="lax", https_only=False)
+# Server-side login sessions are stored in PostgreSQL.
+app.add_middleware(DatabaseSessionMiddleware)
+
+@app.on_event("startup")
+def startup_session_table():
+    ensure_session_table()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
