@@ -1,50 +1,102 @@
 # 🍮 布丁投稿室 — FastAPI 投稿審查系統
 
+## 專案介紹
+
+本系統是一套使用 Python FastAPI 開發的網頁投稿審查平台，提供作者與編輯者不同的操作權限，完成從投稿、編輯、送審到審查結果管理的流程。
+
+## 使用技術
+
+- **後端：** Python、FastAPI、Uvicorn
+- **前端：** HTML、CSS、JavaScript、Jinja2
+- **資料庫：** PostgreSQL
+- **資料庫連線：** psycopg
+- **密碼驗證：** Werkzeug
+- **版本控制：** Git、GitHub
+
 ## 專案結構
-- `main.py`：FastAPI 路由、Session、角色驗證與投稿審查邏輯
-- `database.py`：PostgreSQL 連線（沿用既有 `submission_system`）
-- `templates/`：Jinja2 HTML 頁面
-- `static/css/style.css`：奶油布丁風 CSS
-- `static/js/main.js`：刪除確認視窗
+
+- `main.py`：FastAPI 主程式，負責路由、登入、註冊、角色權限與投稿審查邏輯。
+- `database.py`：PostgreSQL 資料庫連線設定。
+- `server_sessions.py`：登入狀態管理，透過 PostgreSQL 保存 Session 紀錄。
+- `create_user.py`：透過 Python 建立使用者帳號的輔助程式。
+- `templates/`：Jinja2 HTML 網頁模板。
+- `static/css/style.css`：奶油布丁風格的 CSS。
+- `static/js/main.js`：網頁互動與刪除確認功能。
+- `requirements.txt`：Python 套件需求清單。
+
+## 資料庫設計
+
+系統使用 PostgreSQL，資料庫名稱為 `submission_system`。
+
+主要包含三張資料表：
+
+1. `users`：儲存使用者帳號、密碼雜湊值與身分角色。
+2. `submissions`：儲存投稿文章、類別、內容、審查狀態及所屬使用者。
+3. `web_sessions`：儲存使用者登入狀態及有效期限。
+
+## 系統功能
+
+### 作者
+
+- 註冊及登入帳號
+- 新增投稿
+- 查看自己的投稿清單
+- 編輯、刪除尚未送審的稿件
+- 將稿件送出審查
+- 查看稿件審查狀態
+
+### 編輯者
+
+- 登入編輯者管理頁面
+- 查看待審稿件
+- 閱讀稿件完整內容
+- 通過或退回稿件
+
+### 管理員
+
+- 查看帳號清單
+- 建立編輯者帳號
+
+## 投稿審查流程
+
+1. 作者建立文章，狀態為「編輯中」。
+2. 作者送出審查，狀態改為「審查中」。
+3. 編輯者閱讀文章並進行審查。
+4. 通過後狀態變成「已通過」。
+5. 退回後狀態恢復「編輯中」，作者可以重新修改。
 
 ## 安裝與啟動（Windows PowerShell）
-請先備份舊版專案，並確認原本 PostgreSQL 資料庫仍可連線。
+
+第一次使用時，安裝所需套件：
 
 ```powershell
 py -m pip install -r requirements.txt
-$env:DB_PASSWORD = "你的資料庫密碼"
-$env:SESSION_SECRET = "請設定一組長且隨機的字串"
+```
+
+確認 PostgreSQL 服務正常運作，並已設定 `database.py` 的資料庫連線資訊。
+
+啟動 FastAPI：
+
+```powershell
 py -m uvicorn main:app --reload
 ```
 
-瀏覽 `http://127.0.0.1:8000/login`。
+開啟瀏覽器：
 
-### 保留功能
-- 作者 / 編輯者登入與 Session 權限
-- 作者投稿清單依 `user_id` 隔離
-- 新增、編輯、刪除、送出審查
-- 編輯者待審清單、查看完整稿件、通過、退回
-- 原有 API 路徑與資料表欄位不變
+http://127.0.0.1:8000/login
 
-### 注意
-- 本版重構了畫面，未連線至你的本機 PostgreSQL 做端對端測試，請先用測試文章驗證。
-- 本機 Demo 使用 `https_only=False`，正式部署 HTTPS 時應調整設定。
-- 此版未新增 CSRF Token，**不適合直接公開部署**。
-- 不要把資料庫密碼、Session Secret、`.env` 或真實使用者資料推送到 GitHub。
-- `create_user.py` 沿用你原本的檔案，不包含在壓縮包內。
+註冊頁面：
 
-## 新增：網頁註冊及管理員建立編輯者
-- `/register`：訪客自行註冊，**角色固定為 author**，不接受使用者指定角色。
-- `/admin/users`：管理員建立 editor 帳號、查看帳號清單。
-- `/login`：新增註冊入口。
-- **預設管理員是既有 `editor1` 帳號**（需本來就具有 `editor` 角色），直接用它登入即可進入「帳號管理」。如帳號名稱不同，請在啟動前設定 `$env:ADMIN_USERNAME = "你的既有編輯者帳號"`。不會自動建立或升級任何帳號。
-- 新帳號密碼採 Werkzeug `generate_password_hash`，不儲存明文；帳號不可重複。
-- 建議 PostgreSQL 的 `users.username` 設有 UNIQUE 約束；如果尚未設定，確認沒有重複帳號後執行：`ALTER TABLE users ADD CONSTRAINT users_username_unique UNIQUE (username);`（若已有唯一約束則不需執行）。
-- 新增的註冊與管理員表單有 CSRF token；**原本的投稿、審查、登入表單尚未全面加入 CSRF 保護**。本專案仍定位為本機課堂 Demo，不宜直接公開部署。
-- 本版未連接你的本機 PostgreSQL 執行端對端測試，請依下方流程測試。
+http://127.0.0.1:8000/register
 
-### 測試
-1. 未登入開啟 `/register`，建立 `author3`，再登入並投稿。
-2. 以 `editor1` 登入，左側點「帳號管理」，新增 `editor2`。
-3. 登出並以 `editor2` 登入，確認能審查稿件，但無法進入 `/admin/users`（403）。
-4. 再用作者測試編輯、刪除、送審，編輯者測試通過與退回。
+## 登入狀態管理
+
+系統使用 `server_sessions.py` 管理伺服器端 Session。
+
+登入成功後，系統產生隨機登入識別碼，並將對應的登入資訊儲存在 PostgreSQL 的 `web_sessions` 資料表中。
+
+因此不需要額外設定 `SESSION_SECRET`。
+
+## 開發環境
+
+本系統目前主要用於本機開發與軟體工程課程展示，尚未完成正式公開部署所需的完整安全設定。
